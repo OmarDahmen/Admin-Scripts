@@ -6,6 +6,8 @@
 
 
 # Define variables
+
+# Define variables
 LSB=/usr/bin/lsb_release
 
 # Purpose: Display pause prompt
@@ -285,35 +287,47 @@ while :
 do
 
 clear
+usermenuchoice=`zenity --list \
+  --title="User Operations" \
+  --text="Please select action to perform" \
+  --column="Number" --column="Action" \
+	1 "Create a user" \
+	2 "Change the group for a user"\
+	3 "Create a group"\
+	4 "Delete a user" \
+	5 "Change a password"\
+	6 "Return to Main Menu"\
+	7 "Shut down"`
 
-echo ""
-echo ""
-echo "${txtcyn}(please enter the number of your selection below)${txtrst}" | centerwide
-echo ""
-echo "1.  Create a user" | center
-echo "2.  Change the group for a user" | center
-echo "3.  Create a group" | center
-echo "4.  Delete a user" | center
-echo "5.  Change a password" | center
-echo "6.  ${txtpur}Return to Main Menu${txtrst}" | center
-echo "7.  ${txtred}Shut down${txtrst}" | center
-echo ""
 
-read usermenuchoice
+#read usermenuchoice
 case $usermenuchoice in
 
 1 )
-	clear && echo "" && echo "Please enter the new username below:  ${txtcyn}(NO SPACES OR SPECIAL CHARACTERS!)${txtrst}" | centerwide && echo ""
-	read newusername
-	echo "" && echo "Please enter a group for the new user:  ${txtcyn}(STILL NO SPACES OR SPECIAL CHARACTERS!)${txtrst}" | centerwide && echo ""
-	read newusergroup
-	echo "" && echo "What is the new user's full name?  ${txtcyn}(YOU CAN USE SPACES HERE IF YOU WANT!)${txtrst}" | centerwide && echo ""
-	read newuserfullname
-	echo "" && echo ""
+	usercreate=`zenity --forms \
+    	--title="menu Create a user" \
+    	--text="Create a user"  \
+    	--add-entry="Please enter the new username below:"\
+    	--add-entry="Please enter a group for the new user:"\
+    	--add-entry="What is the new user's full name?"
+    	--separator="|"`
+	#clear && echo "" &&  "Please enter the new username below:  ${txtcyn}(NO SPACES OR SPECIAL CHARACTERS!)${txtrst}" | centerwide && echo ""
+	#read newusername
+	newusername="$usercreate" | cut -d "|" -f1
+	#echo "" && echo "Please enter a group for the new user:  ${txtcyn}(STILL NO SPACES OR SPECIAL CHARACTERS!)${txtrst}" | centerwide && echo ""
+	#read newusergroup
+	newusergroup="$usercreate" | cut -d "|" -f2 | md5sum
+	#echo "" && echo "What is the new user's full name?  ${txtcyn}(YOU CAN USE SPACES HERE IF YOU WANT!)${txtrst}" | centerwide && echo ""
+	#read newuserfullname
+	newuserfullname="$usercreate" | cut -d "|" -f3 |md5sum
+	#echo "" && echo ""
 	groupadd $newusergroup
-	useradd -g $newusergroup -c "$newuserfullname" $newusername && echo "${txtgrn}New user $newusername created successfully.${txtrst}" | center || echo "${txtred}Could not create new user.${txtrst}" | center
-	echo "" && echo "${txtcyn}(press ENTER to continue)${txtrst}" | center
-	read
+	useradd -g $newusergroup -c "$newuserfullname" $newusername && zenity --info \
+--text="New user $newusername created successfully." || zenity --info \
+--text="Could not create new user."
+	#"${txtgrn}New user $newusername created successfully.${txtrst}" | center || echo "${txtred}Could not create new user.${txtrst}" | center
+	#echo "" && echo "${txtcyn}(press ENTER to continue)${txtrst}" | center
+	#read
 ;;
 
 2 )
@@ -329,12 +343,17 @@ case $usermenuchoice in
 ;;
 
 3 )
-	clear && echo "" && echo "Please enter a name for the new group below:  ${txtcyn}(NO SPACES OR SPECIAL CHARACTERS!)${txtrst}" | centerwide && echo ""
-	read newgroup
+	clear && echo "" && newgroup=`zenity --entry \
+	--title="Create a Group" \
+	--text="Please enter a name for the new group below:"`
+	#echo "Please enter a name for the new group below:  ${txtcyn}(NO SPACES OR SPECIAL CHARACTERS!)${txtrst}" | centerwide && echo ""
+	#read newgroup
 	echo "" && echo ""
-	groupadd $newgroup && echo "${txtgrn}Group $newgroup created successfully.${txtrst}" | center || echo "${txtred}Failed to create group. Please check if group already exists.${txtrst}" | centerwide
-	echo "" && echo "${txtcyn}(press ENTER to continue)${txtrst}" | center
-	read
+	groupadd $newgroup && zenity --info\
+	--text="Group $newgroup created successfully." || zenity --info\
+	--text="Failed to create group. Please check if group already exists."
+	#echo "" && echo "${txtcyn}(press ENTER to continue)${txtrst}" | center
+	#read
 ;;
 
 4 )
@@ -368,36 +387,22 @@ case $usermenuchoice in
 ;;
 
 6 )
-	clear && echo "" && echo "Are you sure you want to return to the main menu? ${txtcyn}y/n${txtrst}" | centerwide && echo ""
-	read exitays
-	case $exitays in
-		y | Y )
-			clear && exit
-		;;
-		n | N )
-			clear && echo "" && echo "Okay. Nevermind then." | center && echo "" && echo "${txtcyn}(Press ENTER to continue.)${txtrst}" | center && read
-		;;
-		* )
-			clear && echo "" && echo "${txtred}Please make a valid selection.${txtrst}" | center && echo "" && echo "${txtcyn}(Press ENTER to continue.)${txtrst}" | center && read
-		;;
-	esac
+	show_menu
 ;;
 
 7 )
-	clear && echo "" && echo "Are you sure you want to shut down? ${txtcyn}y/n${txtrst}" | centerwide && echo ""
-	read shutdownays
-	case $shutdownays in
-		y | Y )
-			clear && shutdown -h now
-		;;
-		n | N )
-			clear && echo "" && echo "Okay. Nevermind then." | center && echo "" && echo "${txtcyn}(Press ENTER to continue.)${txtrst}" | center && read
-		;;
-		* )
-			clear && echo "" && echo "${txtred}Please make a valid selection.${txtrst}" | center && echo "" && echo "${txtcyn}(Press ENTER to continue.)${txtrst}" | center && read
-		;;
-	esac
+	shutdownays=`zenity --question \
+	--text="Are you sure you want to shut down?"`
+
+	#clear && echo "" && echo "Are you sure you want to shut down? ${txtcyn}y/n${txtrst}" | centerwide && echo ""
+	#read shutdownays
+	if [ $shutdownays ] ; then
+		shutdown -h now
+	else
+		show_menu
+	fi
 ;;
+		
 
 * )
 	clear && echo "" && echo "${txtred}Please make a valid selection.${txtrst}" | center && echo "" && echo "${txtcyn}(Press ENTER to continue.)${txtrst}" | center && read
